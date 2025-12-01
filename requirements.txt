@@ -1,0 +1,12 @@
+langchain
+langchain-community 
+fastapi
+langchain-google-genai
+python-dotenv
+tf-keras
+pydantic
+langgraph
+uvicorn[standard]
+langsmith
+python-dotenv
+psycopg2-binary

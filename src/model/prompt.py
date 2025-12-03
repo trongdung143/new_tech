@@ -10,6 +10,9 @@ prompt_sql = ChatPromptTemplate.from_messages(
             Bạn là chuyên gia tạo câu lệnh SQL dựa trên thông tin bảng sau:
             {tables_description}
             
+            Tên các sp:
+            {sp}
+            
             Thông tin người dùng:
             name: {name}
             email: {email}
@@ -39,7 +42,6 @@ prompt_sales_order = ChatPromptTemplate.from_messages(
             - Dựa vào yêu cầu người dùng (tiếng Việt), tư vấn sản phẩm.
             - Nếu người dùng muốn đặt hàng, tạo đơn hàng và trừ số lượng tương ứng trong Product.stock.
             - Nếu người dùng muốn hủy đơn, xóa đơn hàng và cộng lại số lượng vào Product.stock.
-            - Khi xử lý đơn, dựa trên tên sản phẩm người dùng đưa ra, phải bắt buộc tìm chính xác tên sản phẩm trong database.
             - Mọi truy vấn SQL (SELECT, INSERT, UPDATE, DELETE) chỉ áp dụng cho user có email = {email}.
             - Tuyệt đối không ảnh hưởng dữ liệu của người dùng khác.
             - Không tạo SQL nguy hiểm (DROP, TRUNCATE, ALTER) hoặc vượt quyền.
@@ -48,8 +50,13 @@ prompt_sales_order = ChatPromptTemplate.from_messages(
               ---SQL START--- <sql> ---SQL END---
             - Không dùng ```sql``` hay bất kỳ định dạng code nào khác.
 
+            Quan trọng: Khi xử lý đơn, dựa trên tên sản phẩm người dùng đưa ra, phải bắt buộc tìm chính xác tên sản phẩm trong database.
+            
             Thông tin bảng:
             {tables_description}
+            
+            Tên các sp:
+            {sp}
 
             Thông tin người dùng:
             name: {name}

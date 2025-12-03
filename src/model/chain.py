@@ -15,6 +15,7 @@ class State(AgentState):
     client_id: str
     name: str
     email: str
+    sp: str
 
 
 llm = ChatGoogleGenerativeAI(
@@ -78,8 +79,7 @@ Example row:
 """
 
 
-@tool
-async def get_data_db() -> str:
+async def get_data_db(state: State) -> State:
     """Dùng để lấy tên chính xác của tất cả sản trong database dựa theo tên người dùng nói."""
     try:
         cursor = connection.cursor()
@@ -88,7 +88,8 @@ async def get_data_db() -> str:
         rows = cursor.fetchall()
         data = [dict(zip(columns, row)) for row in rows]
         cursor.close()
-        return json.dumps(data)
+        state.update(sp=data)
+        return state
     except Exception as e:
         return json.dumps({"error": str(e)})
 
@@ -100,19 +101,16 @@ async def process(state: State) -> State:
             "messages": state.get("messages"),
             "name": state.get("name"),
             "email": state.get("email"),
+            "sp": state.get("sp"),
         }
     )
     state.update(messages=[AIMessage(content=response.content)])
     return state
 
 
-tools = ToolNode([get_data_db])
 graph = StateGraph(State)
 graph.add_node("process", process)
-graph.add_node("tools", tools)
-graph.set_entry_point("process")
-graph.add_conditional_edges(
-    "process", tools_condition, {"tools": "tools", "__end__": "__end__"}
-)
+graph.add_node("tools", get_data_db)
+graph.set_entry_point("tools")
 graph.add_edge("tools", "process")
 graph = graph.compile(checkpointer=MemorySaver())

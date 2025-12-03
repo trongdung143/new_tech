@@ -1,3 +1,6 @@
+from fastapi import Query
+
+
 from fastapi import APIRouter
 from fastapi.responses import HTMLResponse, StreamingResponse
 from pydantic import BaseModel
@@ -15,6 +18,8 @@ class SQLRequest(BaseModel):
     sql: str
 
 
+clients = {}
+
 router = APIRouter()
 
 BASE_DIR = os.path.dirname(__file__)
@@ -30,12 +35,48 @@ async def get_chat_page():
         return f.read()
 
 
+@router.get("/handshake")
+async def handshake(
+    full_name: str,
+    email: str,
+    client_id: str,
+):
+
+    if not full_name.strip() or not email.strip() or not client_id.strip():
+        raise HTTPException(status_code=400, detail="Thiếu thông tin bắt buộc.")
+
+    clients[client_id] = {"full_name": full_name.strip(), "email": email.strip()}
+
+    try:
+        cursor = connection.cursor()
+
+        check_sql = "SELECT id FROM Customer WHERE email = %s"
+        cursor.execute(check_sql, (email.strip(),))
+        exists = cursor.fetchone()
+
+        if not exists:
+            insert_sql = "INSERT INTO Customer (name, email) VALUES (%s, %s)"
+            cursor.execute(insert_sql, (full_name.strip(), email.strip()))
+            connection.commit()
+
+        cursor.close()
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Lỗi DB: {str(e)}")
+
+    return {"success": True, "client_id": client_id}
+
+
 @router.get("/query")
 async def query(message: str, client_id: str):
     async def generate():
         full_response = ""
+        name = clients[client_id].get("full_name")
+        email = clients[client_id].get("email")
         input_state = {
             "client_id": client_id,
+            "name": name,
+            "email": email,
             "messages": HumanMessage(content=message),
         }
 
@@ -49,7 +90,7 @@ async def query(message: str, client_id: str):
             if isinstance(response, AIMessageChunk):
                 full_response += response.content
                 for c in response.content:
-                    await asyncio.sleep(0.016)
+                    await asyncio.sleep(0.01)
                     yield f"data: {json.dumps({'type': 'chunk', 'response': c}, ensure_ascii=False)}\n\n"
 
         match = re.search(

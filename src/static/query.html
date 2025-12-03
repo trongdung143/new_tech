@@ -503,11 +503,66 @@
             font-size: 48px;
             margin-bottom: 10px;
         }
+
+        .mode-toggle-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 12px 18px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            z-index: 999;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .mode-toggle-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+        }
+
+        .mode-toggle-btn.auto-mode {
+            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+        }
     </style>
 </head>
 
 <body>
-    <div class="chat-container">
+    <div id="handshake-modal"
+        style="position:fixed;z-index:1000;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;">
+        <div
+            style="background:white;padding:32px 28px 24px 28px;border-radius:18px;box-shadow:0 8px 32px rgba(0,0,0,0.18);min-width:340px;max-width:90vw;">
+            <h2 style="margin-bottom:18px;text-align:center;color:#667eea;font-size:1.3em;font-weight:600;">Nhập Thông
+                tin để
+                tiếp tục</h2>
+            <div style="margin-bottom:12px;">
+                <label for="full-name" style="font-weight:500;">Họ và tên</label><br>
+                <input id="full-name" type="text"
+                    style="width:100%;padding:10px 14px;margin-top:4px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:1em;outline:none;"
+                    placeholder="Nhập họ và tên" autocomplete="off">
+            </div>
+            <div style="margin-bottom:18px;">
+                <label for="email" style="font-weight:500;">Email</label><br>
+                <input id="email" type="email"
+                    style="width:100%;padding:10px 14px;margin-top:4px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:1em;outline:none;"
+                    placeholder="Nhập email" autocomplete="off">
+            </div>
+            <button id="handshake-btn"
+                style="width:100%;padding:12px 0;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;border:none;border-radius:8px;font-size:1.1em;font-weight:600;cursor:pointer;transition:background 0.2s;">Tiếp
+                tục</button>
+            <div id="handshake-error"
+                style="color:#c62828;margin-top:12px;text-align:center;display:none;font-size:0.98em;"></div>
+        </div>
+    </div>
+
+    <button class="mode-toggle-btn auto-mode" id="mode-toggle-btn" title="Che do tu dong">⚡ Auto</button>
+
+    <div class="chat-container" style="display:none;">
         <div class="chat-header">
             Natural Language to SQL Query Generation
         </div>
@@ -521,10 +576,87 @@
     </div>
 
     <script>
+        // Handshake modal logic
+        const handshakeModal = document.getElementById('handshake-modal');
+        const chatContainer = document.querySelector('.chat-container');
+        const handshakeBtn = document.getElementById('handshake-btn');
+        const handshakeError = document.getElementById('handshake-error');
+        const fullNameInput = document.getElementById('full-name');
+        const emailInput = document.getElementById('email');
+
+        function showHandshakeError(msg) {
+            handshakeError.textContent = msg;
+            handshakeError.style.display = 'block';
+        }
+        function hideHandshakeError() {
+            handshakeError.textContent = '';
+            handshakeError.style.display = 'none';
+        }
+
+        function doHandshake() {
+            const fullName = fullNameInput.value.trim();
+            const email = emailInput.value.trim();
+            if (!fullName || !email) {
+                showHandshakeError('Vui lòng nhập đầy đủ họ tên và email.');
+                return;
+            }
+            handshakeBtn.disabled = true;
+            handshakeBtn.textContent = 'Đang xác thực...';
+            hideHandshakeError();
+            // Lấy clientId từ sessionStorage (đã có logic tạo ở dưới)
+            let clientId = sessionStorage.getItem('client_id');
+            if (!clientId) {
+                clientId = 'client_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                sessionStorage.setItem('client_id', clientId);
+            }
+            fetch(`/handshake?full_name=${encodeURIComponent(fullName)}&email=${encodeURIComponent(email)}&client_id=${encodeURIComponent(clientId)}`)
+                .then(async res => {
+                    if (res.ok) {
+                        handshakeModal.style.display = 'none';
+                        chatContainer.style.display = '';
+                        setTimeout(() => {
+                            document.getElementById('message-input').focus();
+                        }, 200);
+                    } else {
+                        const data = await res.json().catch(() => ({}));
+                        showHandshakeError(data.detail || 'Thông tin không hợp lệ, vui lòng thử lại.');
+                        handshakeBtn.disabled = false;
+                        handshakeBtn.textContent = 'Tiếp tục';
+                    }
+                })
+                .catch(() => {
+                    showHandshakeError('Không thể kết nối đến máy chủ.');
+                    handshakeBtn.disabled = false;
+                    handshakeBtn.textContent = 'Tiếp tục';
+                });
+        }
+
+        handshakeBtn.addEventListener('click', doHandshake);
+        emailInput.addEventListener('keypress', e => { if (e.key === 'Enter') doHandshake(); });
+        fullNameInput.addEventListener('keypress', e => { if (e.key === 'Enter') doHandshake(); });
+
+        // Optional: autofill for dev
+        // fullNameInput.value = 'Test User'; emailInput.value = 'test@example.com';
+
         const chatBox = document.getElementById('chat-box');
         const messageInput = document.getElementById('message-input');
         const sendBtn = document.getElementById('send-btn');
+        const modeToggleBtn = document.getElementById('mode-toggle-btn');
         let currentEventSource = null;
+        let autoExecuteSQL = true;
+
+        modeToggleBtn.addEventListener('click', () => {
+            autoExecuteSQL = !autoExecuteSQL;
+            if (autoExecuteSQL) {
+                modeToggleBtn.textContent = '⚡ Auto';
+                modeToggleBtn.classList.add('auto-mode');
+                const sqlContainers = chatBox.querySelectorAll('.sql-container');
+                sqlContainers.forEach(container => container.remove());
+            } else {
+                modeToggleBtn.textContent = '🖱️ Manual';
+                modeToggleBtn.classList.remove('auto-mode');
+            }
+        });
 
 
         let clientId = sessionStorage.getItem('client_id');
@@ -578,6 +710,111 @@
         }
 
         function createSQLButton(sql, container) {
+            if (!sql || !sql.trim()) return;
+
+            if (autoExecuteSQL) {
+                const autoBtn = document.createElement('button');
+                autoBtn.classList.add('execute-btn');
+                autoBtn.style.background = '#ff9800';
+                autoBtn.innerHTML = '<span>⚡</span><span>Tự động xử lý</span>';
+
+                async function runSQL(btn) {
+                    btn.disabled = true;
+                    btn.innerHTML = '<span class="loading-spinner"></span><span>Đang xử lý...</span>';
+                    try {
+                        const response = await fetch('/get_data', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ sql: sql })
+                        });
+                        const data = await response.json();
+                        if (response.ok) {
+                            const resultDiv = document.createElement('div');
+                            resultDiv.classList.add('data-result');
+                            if (!data || data.length === 0) {
+                                resultDiv.innerHTML = `
+                                    <div class="result-header">
+                                        Kết quả truy vấn
+                                        <span class="result-count">0 rows</span>
+                                    </div>
+                                    <div style="padding: 20px; text-align: center; color: #999;">
+                                        Không có dữ liệu
+                                    </div>
+                                `;
+                            } else {
+                                const header = document.createElement('div');
+                                header.classList.add('result-header');
+                                header.innerHTML = `
+                                    Kết quả truy vấn
+                                    <span class="result-count">${data.length} rows</span>
+                                `;
+                                resultDiv.appendChild(header);
+
+                                const tableContainer = document.createElement('div');
+                                tableContainer.classList.add('data-table-container');
+
+                                const table = document.createElement('table');
+                                table.classList.add('data-table');
+
+                                const thead = document.createElement('thead');
+                                const headerRow = document.createElement('tr');
+                                Object.keys(data[0]).forEach(key => {
+                                    const th = document.createElement('th');
+                                    th.textContent = key;
+                                    headerRow.appendChild(th);
+                                });
+                                thead.appendChild(headerRow);
+                                table.appendChild(thead);
+
+                                const tbody = document.createElement('tbody');
+                                data.forEach(row => {
+                                    const tr = document.createElement('tr');
+                                    Object.values(row).forEach(value => {
+                                        const td = document.createElement('td');
+                                        if (value === null) {
+                                            td.textContent = 'NULL';
+                                            td.style.color = '#999';
+                                            td.style.fontStyle = 'italic';
+                                        } else if (typeof value === 'number') {
+                                            td.textContent = value;
+                                            td.style.textAlign = 'right';
+                                        } else {
+                                            td.textContent = value;
+                                        }
+                                        tr.appendChild(td);
+                                    });
+                                    tbody.appendChild(tr);
+                                });
+                                table.appendChild(tbody);
+
+                                tableContainer.appendChild(table);
+                                resultDiv.appendChild(tableContainer);
+                            }
+                            container.appendChild(resultDiv);
+                        } else {
+                            const errorDiv = document.createElement('div');
+                            errorDiv.classList.add('error-message');
+                            errorDiv.innerHTML = `<strong>❌ Lỗi:</strong> ${data.detail || 'Có lỗi xảy ra'}`;
+                            container.appendChild(errorDiv);
+                        }
+                    } catch (error) {
+                        const errorDiv = document.createElement('div');
+                        errorDiv.classList.add('error-message');
+                        errorDiv.innerHTML = `<strong>❌ Lỗi:</strong> Lỗi kết nối: ${error.message}`;
+                        container.appendChild(errorDiv);
+                    }
+                    chatBox.scrollTop = chatBox.scrollHeight;
+                }
+
+                autoBtn.onclick = () => runSQL(autoBtn);
+                setTimeout(() => {
+                    autoBtn.click();
+                }, 350);
+                return;
+            }
+
             const sqlContainer = document.createElement('div');
             sqlContainer.classList.add('sql-container');
 
@@ -598,10 +835,9 @@
             executeBtn.classList.add('execute-btn');
             executeBtn.innerHTML = '<span>▶</span><span>Thực thi SQL</span>';
 
-            executeBtn.onclick = async function () {
-                executeBtn.disabled = true;
-                executeBtn.innerHTML = '<span class="loading-spinner"></span><span>Đang xử lý...</span>';
-
+            async function runSQL(btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="loading-spinner"></span><span>Đang xử lý...</span>';
                 try {
                     const response = await fetch('/get_data', {
                         method: 'POST',
@@ -610,36 +846,35 @@
                         },
                         body: JSON.stringify({ sql: sql })
                     });
-
                     const data = await response.json();
-
                     if (response.ok) {
                         displayData(data, sqlContainer);
-                        executeBtn.innerHTML = '<span>✓</span><span>Thành công</span>';
-                        executeBtn.style.background = '#2196F3';
+                        btn.innerHTML = '<span>✓</span><span>Thành công</span>';
+                        btn.style.background = '#2196F3';
                     } else {
                         displayError(data.detail || 'Có lỗi xảy ra', sqlContainer);
-                        executeBtn.innerHTML = '<span>✗</span><span>Lỗi</span>';
-                        executeBtn.style.background = '#f44336';
+                        btn.innerHTML = '<span>✗</span><span>Lỗi</span>';
+                        btn.style.background = '#f44336';
                         setTimeout(() => {
-                            executeBtn.innerHTML = '<span>▶</span><span>Thực thi SQL</span>';
-                            executeBtn.style.background = '#4CAF50';
-                            executeBtn.disabled = false;
+                            btn.innerHTML = '<span>▶</span><span>Thực thi SQL</span>';
+                            btn.style.background = '#4CAF50';
+                            btn.disabled = false;
                         }, 3000);
                     }
                 } catch (error) {
                     displayError('Lỗi kết nối: ' + error.message, sqlContainer);
-                    executeBtn.innerHTML = '<span>✗</span><span>Lỗi kết nối</span>';
-                    executeBtn.style.background = '#f44336';
+                    btn.innerHTML = '<span>✗</span><span>Lỗi kết nối</span>';
+                    btn.style.background = '#f44336';
                     setTimeout(() => {
-                        executeBtn.innerHTML = '<span>▶</span><span>Thực thi SQL</span>';
-                        executeBtn.style.background = '#4CAF50';
-                        executeBtn.disabled = false;
+                        btn.innerHTML = '<span>▶</span><span>Thực thi SQL</span>';
+                        btn.style.background = '#4CAF50';
+                        btn.disabled = false;
                     }, 3000);
                 }
-
                 chatBox.scrollTop = chatBox.scrollHeight;
-            };
+            }
+
+            executeBtn.onclick = () => runSQL(executeBtn);
 
             sqlContainer.appendChild(sqlHeader);
             sqlContainer.appendChild(sqlCode);

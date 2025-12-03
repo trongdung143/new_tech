@@ -1,0 +1,26 @@
+Cấp độ 1 – Cơ bản (SELECT, INSERT, UPDATE, DELETE)
+Lấy tất cả các sản phẩm trong bảng Product
+Hiển thị tên và email của tất cả khách hàng
+Thêm một khách hàng mới: name=David, email=david@example.com
+Thêm sản phẩm mới: name=Headset, price=75, stock=30
+Cập nhật stock của sản phẩm Laptop thành 8
+Xóa khách hàng có tên Bob khỏi bảng Customer
+
+Cấp độ 2 – Trung bình (SELECT + JOIN + SUM + GROUP BY + HAVING + ORDER BY + LIMIT)
+Hiển thị tất cả đơn hàng của khách hàng Alice theo thứ tự ngày giảm dần
+Tính tổng số lượng sản phẩm đã bán cho mỗi sản phẩm
+Đếm số lượng khách hàng đã đặt ít nhất 1 đơn hàng
+Hiển thị tên khách hàng và tổng số tiền họ đã chi cho tất cả đơn hàng
+Lấy danh sách sản phẩm chưa từng được mua
+Hiển thị top 5 sản phẩm có giá cao nhất
+Tìm các đơn hàng mà tổng số lượng sản phẩm vượt quá 3
+
+Cấp độ 3 – Nâng cao (SELECT + JOIN nhiều bảng + SUM + GROUP BY + HAVING + LEFT JOIN + ORDER BY)
+Liệt kê tên khách hàng, ngày đặt hàng và tên sản phẩm cho tất cả đơn hàng
+Hiển thị tên khách hàng và tổng số tiền họ đã chi cho mỗi đơn hàng
+Tìm các khách hàng đã mua sản phẩm Laptop và Mouse
+kê tên sản phẩm, số lượng đã bán, và tên khách hàng mua trong mỗi đơn hàng
+Hiển thị tên khách hàng, sản phẩm và số lượng đã mua, sắp xếp theo tên khách hàng
+Tính tổng số lượng từng sản phẩm đã bán và hiển thị tên sản phẩm
+Liệt kê tất cả đơn hàng cùng chi tiết sản phẩm
+Tìm khách hàng chưa từng đặt đơn hàng nào

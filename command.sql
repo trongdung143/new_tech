@@ -17,19 +17,9 @@ CREATE TABLE Customer (
 CREATE TABLE Orders (
     id SERIAL PRIMARY KEY,
     customer_id INT NOT NULL REFERENCES Customer(id),
-    order_date TIMESTAMP NOT NULL DEFAULT NOW()
-);
-
--- OrderItem
-CREATE TABLE OrderItem (
-    id SERIAL PRIMARY KEY,
-    order_id INT NOT NULL REFERENCES Orders(id),
     product_id INT NOT NULL REFERENCES Product(id),
     quantity INT NOT NULL
 );
-
-
-
 
 
 -- Product
@@ -46,14 +36,8 @@ INSERT INTO Customer (name, email) VALUES
 ('Charlie', 'charlie@example.com');
 
 -- Orders
-INSERT INTO Orders (customer_id, order_date) VALUES
-(1, '2025-11-20'),
-(2, '2025-11-21'),
-(1, '2025-11-22');
+INSERT INTO Orders (customer_id, product_id, quantity) VALUES
+(1, 2, 1),
+(2, 1, 2),
+(1, 3, 3);
 
--- OrderItem
-INSERT INTO OrderItem (order_id, product_id, quantity) VALUES
-(1, 1, 1),  
-(1, 2, 2),  
-(2, 3, 1),  
-(3, 4, 2);  

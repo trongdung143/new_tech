@@ -1,4 +1,4 @@
-from src.model.prompt import prompt, prompt_1, prompt_2
+from src.model.prompt import prompt_sales_order, prompt_sql
 from langchain_google_genai import ChatGoogleGenerativeAI
 from src.setup import GOOGLE_API_KEY
 from langgraph.graph import StateGraph
@@ -23,7 +23,7 @@ llm = ChatGoogleGenerativeAI(
     disable_streaming=False,
 )
 
-chain = prompt | llm
+chain = prompt_sales_order | llm
 
 tables_description = """
 Database schema:
@@ -42,26 +42,20 @@ Table Customer:
 Table Orders:
 - id: SERIAL PRIMARY KEY
 - customer_id: INT NOT NULL REFERENCES Customer(id)
-- order_date: TIMESTAMP NOT NULL DEFAULT NOW()
-
-Table OrderItem:
-- id: SERIAL PRIMARY KEY
-- order_id: INT NOT NULL REFERENCES Orders(id)
 - product_id: INT NOT NULL REFERENCES Product(id)
 - quantity: INT NOT NULL
-
-
 """
 
 
 tables_description_detailed = """
-Database schema with example data (1 row per table):
+Database schema with example data and purpose of each table:
 
 Table Product:
 - id: SERIAL PRIMARY KEY
 - name: TEXT NOT NULL
 - price: NUMERIC NOT NULL
 - stock: INT NOT NULL
+Purpose: Lưu thông tin sản phẩm mà cửa hàng bán, bao gồm tên, giá và số lượng tồn kho.
 Example row:
 1, 'Laptop', 1200, 10
 
@@ -69,30 +63,24 @@ Table Customer:
 - id: SERIAL PRIMARY KEY
 - name: TEXT NOT NULL
 - email: TEXT NOT NULL
+Purpose: Lưu thông tin khách hàng, bao gồm tên và email để phục vụ quản lý đơn hàng và liên hệ.
 Example row:
 1, 'Alice', 'alice@example.com'
 
 Table Orders:
 - id: SERIAL PRIMARY KEY
 - customer_id: INT NOT NULL REFERENCES Customer(id)
-- order_date: TIMESTAMP NOT NULL DEFAULT NOW()
-Example row:
-1, 1, '2025-11-20'
-
-Table OrderItem:
-- id: SERIAL PRIMARY KEY
-- order_id: INT NOT NULL REFERENCES Orders(id)
 - product_id: INT NOT NULL REFERENCES Product(id)
 - quantity: INT NOT NULL
+Purpose: Lưu các đơn hàng mà khách hàng đã đặt, mỗi đơn hàng liên kết với một khách hàng và một sản phẩm cụ thể, kèm số lượng.
 Example row:
-1, 1, 1, 1  -- Alice bought 1 Laptop
+1, 1, 2, 1  -- Alice đặt 1 Mouse
 """
 
 
 @tool
-async def get_data_db(table: str, column: str) -> str:
-    """Dùng để lấy tên tất cả sản phẩm"""
-
+async def get_data_db() -> str:
+    """Dùng để lấy tên chính xác của tất cả sản trong database dựa theo tên người dùng nói."""
     try:
         cursor = connection.cursor()
         cursor.execute(f"SELECT name FROM product")

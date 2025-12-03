@@ -30,11 +30,11 @@ Tạo file `.env` ở thư mục gốc project với nội dung:
 GOOGLE_API_KEY=<your-google-api-key>
 
 # Database
-DB_HOST=localhost
-DB_PORT=5432
-DB_USER=<your-db-user>
-DB_PASSWORD=<your-db-password>
-DB_NAME=<your-database-name>
+HOST=aws-1-ap-southeast-1.pooler.supabase.com
+PORT=6543
+DATABASE=postgres
+USER=postgres.wrtbzhmtnjvqdwvbdmaw
+PASSWORD=Matkhaula@123@
 ```
 
 **Cách lấy Google API Key:**
